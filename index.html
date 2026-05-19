@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#9B2335" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="SD Pulse" />
+  <title>SD Pulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:            #F7F0E8;
+      --bg-card:       #FDF8F3;
+      --bg-hover:      #EFE7DC;
+      --crimson:       #9B2335;
+      --crimson-hover: #B02A3E;
+      --crimson-light: rgba(155,35,53,0.09);
+      --dark:          #1A0F0F;
+      --text:          #3A3030;
+      --muted:         #7A6E6E;
+      --green:         #2D5A4F;
+      --border:        #E5D8CC;
+      --shadow:        0 2px 12px rgba(26,15,15,0.07);
+      --shadow-md:     0 6px 24px rgba(26,15,15,0.11);
+      --radius:        12px;
+      --radius-sm:     8px;
+    }
+    html, body, #root { height: 100%; }
+    body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); font-size:15px; line-height:1.6; }
+    ::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border-radius:var(--radius-sm); font-family:'Inter',sans-serif; font-size:14px; font-weight:500; border:none; cursor:pointer; transition:all 0.15s; }
+    .btn-primary { background:var(--crimson); color:white; }
+    .btn-primary:hover { background:var(--crimson-hover); transform:translateY(-1px); box-shadow:0 4px 14px rgba(155,35,53,0.3); }
+    .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; box-shadow:none; }
+    .btn-ghost { background:transparent; color:var(--text); border:1.5px solid var(--border); }
+    .btn-ghost:hover { background:var(--bg-hover); border-color:var(--crimson); color:var(--crimson); }
+    .btn-icon { background:transparent; border:none; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text); transition:all 0.15s; flex-shrink:0; }
+    .btn-icon:hover { background:var(--bg-hover); color:var(--crimson); }
+
+    /* SETUP / NOT CONFIGURED */
+    .setup-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--bg); }
+    .setup-card { background:var(--bg-card); border-radius:20px; padding:48px 40px; width:100%; max-width:520px; box-shadow:var(--shadow-md); border:1px solid var(--border); }
+    .setup-card h2 { font-family:'Playfair Display',serif; font-size:22px; color:var(--dark); margin-bottom:8px; }
+    .setup-card p { font-size:14px; color:var(--muted); margin-bottom:20px; line-height:1.6; }
+    .setup-step { display:flex; gap:12px; margin-bottom:16px; align-items:flex-start; }
+    .setup-num { width:26px; height:26px; border-radius:50%; background:var(--crimson); color:white; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+    .setup-step-text { font-size:14px; color:var(--text); line-height:1.5; }
+    .setup-step-text code { font-family:monospace; font-size:13px; background:var(--bg); padding:1px 5px; border-radius:4px; border:1px solid var(--border); color:var(--crimson); }
+    .setup-link { color:var(--crimson); font-weight:500; }
+
+    /* LOGIN */
+    .login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--bg); }
+    .login-card { background:var(--bg-card); border-radius:20px; padding:48px 40px; width:100%; max-width:420px; box-shadow:var(--shadow-md); border:1px solid var(--border); }
+    .login-logo { margin-bottom:32px; }
+    .login-logo-mark { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+    .logo-icon { width:42px; height:42px; background:var(--crimson); border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-family:'Playfair Display',serif; font-weight:700; font-size:17px; }
+    .logo-text { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:var(--dark); }
+    .login-tagline { font-size:13px; color:var(--muted); padding-left:2px; }
+    .login-title { font-family:'Playfair Display',serif; font-size:24px; color:var(--dark); margin-bottom:6px; }
+    .login-subtitle { font-size:14px; color:var(--muted); margin-bottom:28px; }
+    .form-group { margin-bottom:16px; }
+    .form-label { display:block; font-size:13px; font-weight:500; color:var(--text); margin-bottom:6px; }
+    .form-input { width:100%; padding:11px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:var(--bg); font-family:'Inter',sans-serif; font-size:14px; color:var(--dark); outline:none; transition:border-color 0.15s; }
+    .form-input:focus { border-color:var(--crimson); }
+    .form-input::placeholder { color:var(--muted); }
+    .form-error { color:var(--crimson); font-size:13px; margin-bottom:14px; padding:10px 12px; background:var(--crimson-light); border-radius:var(--radius-sm); }
+
+    /* LOADING */
+    .loading-screen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; background:var(--bg); }
+    .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--crimson); border-radius:50%; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .loading-text { font-size:14px; color:var(--muted); }
+
+    /* PROFILE SETUP */
+    .profile-setup-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--bg); }
+
+    /* APP SHELL */
+    .app { display:flex; height:100vh; overflow:hidden; }
+    .sidebar { width:240px; flex-shrink:0; background:var(--bg-card); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:24px 16px; overflow-y:auto; }
+    .sidebar-logo { display:flex; align-items:center; gap:10px; padding:0 8px; margin-bottom:32px; }
+    .sidebar-logo .logo-icon { width:34px; height:34px; font-size:14px; border-radius:8px; }
+    .sidebar-logo .logo-text { font-size:18px; }
+    .nav-section { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; padding:0 8px; margin:20px 0 6px; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm); cursor:pointer; font-size:14px; font-weight:500; color:var(--text); transition:all 0.12s; margin-bottom:2px; user-select:none; }
+    .nav-item:hover { background:var(--bg-hover); color:var(--crimson); }
+    .nav-item.active { background:var(--crimson-light); color:var(--crimson); }
+    .sidebar-footer { border-top:1px solid var(--border); padding-top:16px; margin-top:auto; }
+    .user-card { display:flex; align-items:center; gap:10px; padding:10px; border-radius:var(--radius-sm); }
+    .avatar { width:34px; height:34px; border-radius:50%; background:var(--crimson); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; flex-shrink:0; }
+    .avatar-sm { width:28px; height:28px; font-size:11px; }
+    .user-name { font-size:13px; font-weight:500; color:var(--dark); line-height:1.3; }
+    .user-role { font-size:11px; color:var(--muted); text-transform:capitalize; }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .topbar { background:var(--bg-card); border-bottom:1px solid var(--border); padding:0 24px; height:60px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .topbar-title { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; color:var(--dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; }
+    .topbar-actions { display:flex; align-items:center; gap:8px; }
+    .content { flex:1; overflow-y:auto; padding:28px 24px; }
+
+    /* NOTIFICATION PANEL */
+    .notif-wrapper { position:relative; }
+    .notif-badge-dot { position:absolute; top:4px; right:4px; width:14px; height:14px; background:var(--crimson); color:white; font-size:9px; font-weight:700; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg-card); pointer-events:none; }
+    .notif-panel { position:absolute; top:calc(100% + 10px); right:0; width:330px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-md); z-index:200; overflow:hidden; }
+    .notif-header { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .notif-header-title { font-size:14px; font-weight:600; color:var(--dark); }
+    .notif-mark-read { font-size:12px; color:var(--crimson); cursor:pointer; font-weight:500; }
+    .notif-mark-read:hover { text-decoration:underline; }
+    .notif-list { max-height:340px; overflow-y:auto; }
+    .notif-empty { padding:24px; text-align:center; color:var(--muted); font-size:13px; }
+    .notif-item { display:flex; gap:10px; padding:13px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.1s; }
+    .notif-item:hover { background:var(--bg-hover); }
+    .notif-item.unread { background:var(--crimson-light); }
+    .notif-item.unread:hover { background:rgba(155,35,53,0.13); }
+    .notif-dot { width:7px; height:7px; border-radius:50%; background:var(--crimson); flex-shrink:0; margin-top:5px; }
+    .notif-dot-empty { width:7px; height:7px; flex-shrink:0; }
+    .notif-text { font-size:13px; color:var(--text); line-height:1.45; }
+    .notif-time { font-size:11px; color:var(--muted); margin-top:3px; }
+
+    /* FEED */
+    .feed { max-width:680px; margin:0 auto; }
+    .page-accent { width:44px; height:3px; background:var(--green); border-radius:2px; margin-bottom:16px; }
+    .page-title { font-family:'Playfair Display',serif; font-size:28px; color:var(--dark); margin-bottom:4px; }
+    .page-subtitle { font-size:14px; color:var(--muted); margin-bottom:28px; }
+    .post-card { background:var(--bg-card); border-radius:var(--radius); border:1px solid var(--border); padding:24px; margin-bottom:16px; cursor:pointer; transition:all 0.15s; box-shadow:var(--shadow); }
+    .post-card:hover { border-color:var(--crimson); box-shadow:var(--shadow-md); transform:translateY(-2px); }
+    .post-meta { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+    .post-author { font-size:13px; font-weight:500; color:var(--text); }
+    .post-date { font-size:12px; color:var(--muted); }
+    .post-sep { width:3px; height:3px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+    .post-category { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--crimson); background:var(--crimson-light); padding:2px 8px; border-radius:20px; margin-left:auto; }
+    .post-title { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--dark); margin-bottom:8px; line-height:1.3; }
+    .post-excerpt { font-size:14px; color:var(--muted); line-height:1.65; margin-bottom:16px; }
+    .post-footer { display:flex; align-items:center; gap:14px; padding-top:14px; border-top:1px solid var(--border); }
+    .post-stat { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); }
+    .read-more { margin-left:auto; font-size:13px; font-weight:500; color:var(--crimson); }
+
+    /* POLL PREVIEW */
+    .poll-preview { background:var(--bg); border-radius:var(--radius-sm); border:1px solid var(--border); padding:14px 16px; margin-bottom:14px; }
+    .poll-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--green); margin-bottom:6px; }
+    .poll-question-text { font-size:14px; font-weight:500; color:var(--dark); margin-bottom:10px; }
+    .poll-bar-row { margin-bottom:7px; }
+    .poll-bar-label-row { display:flex; justify-content:space-between; margin-bottom:3px; }
+    .poll-bar-option { font-size:12px; color:var(--text); }
+    .poll-bar-pct { font-size:12px; font-weight:600; color:var(--crimson); }
+    .poll-bar-track { height:5px; background:var(--border); border-radius:3px; }
+    .poll-bar-fill { height:100%; border-radius:3px; background:var(--crimson); transition:width 0.4s; }
+    .poll-bar-fill.top { background:var(--green); }
+    .poll-total { font-size:11px; color:var(--muted); margin-top:6px; }
+
+    /* POST DETAIL */
+    .post-detail { max-width:680px; margin:0 auto; }
+    .back-btn { display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:500; color:var(--crimson); cursor:pointer; margin-bottom:22px; }
+    .back-btn:hover { opacity:0.75; }
+    .detail-category { display:inline-block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--crimson); background:var(--crimson-light); padding:3px 10px; border-radius:20px; margin-bottom:14px; }
+    .detail-title { font-family:'Playfair Display',serif; font-size:32px; font-weight:700; color:var(--dark); line-height:1.2; margin-bottom:16px; }
+    .detail-meta { display:flex; align-items:center; gap:10px; padding-bottom:22px; border-bottom:1px solid var(--border); margin-bottom:24px; }
+    .detail-author-name { font-size:14px; font-weight:500; color:var(--dark); }
+    .detail-author-info { font-size:12px; color:var(--muted); }
+    .post-body { font-size:15px; line-height:1.78; color:var(--text); }
+    .post-body h2 { font-family:'Playfair Display',serif; font-size:22px; color:var(--dark); margin:28px 0 12px; }
+    .post-body p { margin-bottom:16px; }
+    .post-body strong { color:var(--dark); font-weight:600; }
+    .post-body a { color:var(--crimson); }
+
+    /* INTERACTIVE POLL */
+    .poll-interactive { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-top:28px; box-shadow:var(--shadow); }
+    .poll-int-header { display:flex; align-items:center; gap:7px; margin-bottom:14px; }
+    .poll-int-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--green); }
+    .poll-int-question { font-family:'Playfair Display',serif; font-size:19px; color:var(--dark); margin-bottom:16px; line-height:1.3; }
+    .poll-vote-btn { width:100%; padding:12px 16px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:var(--bg); font-family:'Inter',sans-serif; font-size:14px; color:var(--text); text-align:left; cursor:pointer; margin-bottom:8px; display:flex; align-items:center; gap:10px; transition:all 0.12s; }
+    .poll-vote-btn:hover { border-color:var(--crimson); background:var(--crimson-light); color:var(--crimson); }
+    .poll-vote-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .poll-radio { width:18px; height:18px; border-radius:50%; border:2px solid currentColor; flex-shrink:0; }
+    .poll-result-row { margin-bottom:12px; }
+    .poll-result-labels { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+    .poll-result-label { font-size:14px; color:var(--text); display:flex; align-items:center; gap:5px; }
+    .poll-result-label.winner { color:var(--green); font-weight:600; }
+    .poll-result-label.myvote { font-weight:600; color:var(--dark); }
+    .poll-result-pct { font-size:13px; font-weight:600; color:var(--dark); }
+    .poll-result-track { height:8px; background:var(--border); border-radius:4px; }
+    .poll-result-fill { height:100%; border-radius:4px; background:var(--crimson); transition:width 0.5s; }
+    .poll-result-fill.top { background:var(--green); }
+    .poll-footer { font-size:12px; color:var(--muted); margin-top:12px; display:flex; align-items:center; gap:5px; }
+
+    /* COMPOSE */
+    .compose-view { max-width:680px; margin:0 auto; }
+    .compose-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:28px; box-shadow:var(--shadow); }
+    .compose-title-input { width:100%; font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--dark); background:transparent; border:none; outline:none; padding:0 0 14px; border-bottom:2px solid var(--border); margin-bottom:18px; transition:border-color 0.15s; }
+    .compose-title-input:focus { border-bottom-color:var(--crimson); }
+    .compose-title-input::placeholder { color:#C5B8B0; }
+    .section-label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px; }
+    .cat-chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:18px; }
+    .cat-chip { padding:5px 13px; border-radius:20px; border:1.5px solid var(--border); font-size:13px; cursor:pointer; color:var(--text); background:var(--bg); transition:all 0.1s; }
+    .cat-chip.active { border-color:var(--crimson); background:var(--crimson-light); color:var(--crimson); font-weight:500; }
+    .cat-chip:hover:not(.active) { border-color:var(--muted); }
+    .toolbar { display:flex; gap:3px; padding:7px 10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px; flex-wrap:wrap; align-items:center; }
+    .tb-btn { height:28px; min-width:28px; padding:0 6px; border:none; background:transparent; cursor:pointer; border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--text); font-size:13px; font-weight:600; transition:all 0.1s; font-family:'Inter',sans-serif; }
+    .tb-btn:hover { background:var(--border); color:var(--crimson); }
+    .tb-sep { width:1px; background:var(--border); height:18px; margin:0 4px; }
+    .tb-hint { font-size:11px; color:var(--muted); margin-left:4px; }
+    .compose-body { min-height:180px; outline:none; font-size:15px; line-height:1.7; color:var(--text); padding:4px 0; margin-bottom:18px; }
+    .compose-body:empty::before { content:attr(data-placeholder); color:#BFB2A8; pointer-events:none; display:block; }
+    .compose-body h2 { font-family:'Playfair Display',serif; font-size:20px; color:var(--dark); margin:16px 0 8px; }
+    .compose-body p { margin-bottom:8px; }
+    .compose-divider { border:none; border-top:1px solid var(--border); margin:18px 0; }
+    .poll-toggle { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; font-weight:500; color:var(--text); margin-bottom:16px; }
+    .poll-toggle:hover { color:var(--crimson); }
+    .poll-toggle-icon { width:22px; height:22px; border-radius:50%; background:var(--crimson-light); display:flex; align-items:center; justify-content:center; color:var(--crimson); font-size:13px; flex-shrink:0; }
+    .poll-builder { background:var(--bg); border-radius:var(--radius-sm); padding:16px 18px; border:1px solid var(--border); }
+    .poll-builder-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--green); margin-bottom:10px; }
+    .poll-q-input,.poll-opt-input { width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:var(--bg-card); font-family:'Inter',sans-serif; font-size:14px; outline:none; color:var(--dark); transition:border-color 0.15s; }
+    .poll-q-input { margin-bottom:10px; }
+    .poll-q-input:focus,.poll-opt-input:focus { border-color:var(--green); }
+    .poll-opt-row { display:flex; gap:7px; margin-bottom:8px; align-items:center; }
+    .poll-add-btn { background:none; border:none; cursor:pointer; font-size:13px; color:var(--green); font-weight:500; display:flex; align-items:center; gap:4px; padding:4px 0; font-family:'Inter',sans-serif; }
+    .poll-add-btn:hover { opacity:0.75; }
+    .compose-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+
+    /* EMPTY STATE */
+    .empty-state { text-align:center; padding:60px 24px; color:var(--muted); }
+    .empty-icon { font-size:36px; margin-bottom:12px; opacity:0.45; }
+    .empty-title { font-family:'Playfair Display',serif; font-size:18px; color:var(--text); margin-bottom:6px; }
+    .empty-body { font-size:14px; }
+
+    /* TOAST */
+    .toast-wrap { position:fixed; top:16px; right:16px; z-index:999; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+    .toast { background:var(--dark); color:white; padding:12px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; box-shadow:var(--shadow-md); display:flex; align-items:center; gap:8px; max-width:300px; animation:toastIn 0.2s ease; }
+    @keyframes toastIn { from { transform:translateX(16px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    .toast-check { color:#4ade80; flex-shrink:0; }
+    .toast-err { color:#f87171; flex-shrink:0; }
+
+    /* MOBILE */
+    .bottom-nav { display:none; }
+    @media (max-width:768px) {
+      .sidebar { display:none; }
+      .bottom-nav { display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--bg-card); border-top:1px solid var(--border); padding:8px 0 calc(8px + env(safe-area-inset-bottom)); z-index:100; }
+      .bn-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; cursor:pointer; color:var(--muted); font-size:11px; font-weight:500; transition:color 0.12s; position:relative; }
+      .bn-item.active { color:var(--crimson); }
+      .bn-badge { position:absolute; top:4px; right:calc(50% - 20px); width:14px; height:14px; background:var(--crimson); color:white; font-size:9px; font-weight:700; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg-card); }
+      .content { padding:20px 16px 90px; }
+      .topbar { padding:0 16px; }
+      .detail-title { font-size:24px; }
+      .compose-card { padding:18px; }
+      .compose-title-input { font-size:21px; }
+      .notif-panel { right:-60px; width:300px; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ══════════════════════════════════════════════════════════
+   CONFIGURATION  — paste your Supabase values here
+   ══════════════════════════════════════════════════════════ */
+const SUPABASE_URL      = 'https://jjbihpeorketwauwakjx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYmlocGVvcmtldHdhdXdha2p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTEyNTIsImV4cCI6MjA5NDc4NzI1Mn0.gdCLXbt6goaKfa5W6KxtEigoCQ4Ro_Ps_-Yh2aInr6c';
+/* ══════════════════════════════════════════════════════════ */
+
+const isConfigured = !SUPABASE_URL.startsWith('YOUR_') && !SUPABASE_ANON_KEY.startsWith('YOUR_');
+const sb = isConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+/* ── ICONS ────────────────────────────────────────────────────────────────── */
+const PATHS = {
+  home:   [{tag:'path',p:{d:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z'}},{tag:'polyline',p:{points:'9 22 9 12 15 12 15 22'}}],
+  bell:   [{tag:'path',p:{d:'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9'}},{tag:'path',p:{d:'M13.73 21a2 2 0 01-3.46 0'}}],
+  edit:   [{tag:'path',p:{d:'M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7'}},{tag:'path',p:{d:'M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z'}}],
+  logout: [{tag:'path',p:{d:'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4'}},{tag:'polyline',p:{points:'16 17 21 12 16 7'}},{tag:'line',p:{x1:'21',y1:'12',x2:'9',y2:'12'}}],
+  back:   [{tag:'line',p:{x1:'19',y1:'12',x2:'5',y2:'12'}},{tag:'polyline',p:{points:'12 19 5 12 12 5'}}],
+  check:  [{tag:'polyline',p:{points:'20 6 9 17 4 12'}}],
+  poll:   [{tag:'line',p:{x1:'18',y1:'20',x2:'18',y2:'10'}},{tag:'line',p:{x1:'12',y1:'20',x2:'12',y2:'4'}},{tag:'line',p:{x1:'6',y1:'20',x2:'6',y2:'14'}}],
+  plus:   [{tag:'line',p:{x1:'12',y1:'5',x2:'12',y2:'19'}},{tag:'line',p:{x1:'5',y1:'12',x2:'19',y2:'12'}}],
+  x:      [{tag:'line',p:{x1:'18',y1:'6',x2:'6',y2:'18'}},{tag:'line',p:{x1:'6',y1:'6',x2:'18',y2:'18'}}],
+  send:   [{tag:'line',p:{x1:'22',y1:'2',x2:'11',y2:'13'}},{tag:'polygon',p:{points:'22 2 15 22 11 13 2 9 22 2'}}],
+  eye:    [{tag:'path',p:{d:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'}},{tag:'circle',p:{cx:'12',cy:'12',r:'3'}}],
+  book:   [{tag:'path',p:{d:'M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z'}},{tag:'path',p:{d:'M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z'}}],
+  alert:  [{tag:'circle',p:{cx:'12',cy:'12',r:'10'}},{tag:'line',p:{x1:'12',y1:'8',x2:'12',y2:'12'}},{tag:'line',p:{x1:'12',y1:'16',x2:'12.01',y2:'16'}}],
+};
+const Icon = ({ name, size=18, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    {(PATHS[name]||[]).map((s,i) => React.createElement(s.tag, {key:i,...s.p}))}
+  </svg>
+);
+
+/* ── HELPERS ─────────────────────────────────────────────────────────────── */
+const fmtDate = s => new Date(s).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+const fmtTime = s => {
+  const d = new Date(s), now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + ' min ago';
+  if (diff < 86400) return Math.floor(diff/3600) + ' h ago';
+  return Math.floor(diff/86400) + ' days ago';
+};
+const totalVotes = poll => poll ? poll.options.reduce((a,o) => a+o.votes, 0) : 0;
+const makeInitials = name => {
+  const parts = (name||'').trim().split(' ').filter(Boolean);
+  return (parts[0]?.[0]||'') + (parts[parts.length-1]?.[0]||'');
+};
+
+/* ── TOASTS ──────────────────────────────────────────────────────────────── */
+function Toasts({ toasts }) {
+  return (
+    <div className="toast-wrap">
+      {toasts.map(t => (
+        <div key={t.id} className="toast">
+          <span className={t.err ? 'toast-err' : 'toast-check'}>
+            <Icon name={t.err ? 'alert' : 'check'} size={14}/>
+          </span>
+          {t.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── NOT CONFIGURED ──────────────────────────────────────────────────────── */
+function NotConfigured() {
+  return (
+    <div className="setup-screen">
+      <div className="setup-card">
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:24}}>
+          <div className="logo-icon">SD</div>
+          <span className="logo-text">SD Pulse</span>
+        </div>
+        <h2>One last step before launch</h2>
+        <p>Open this HTML file in a text editor and replace the two placeholders at the top with your Supabase project credentials.</p>
+        <div className="setup-step">
+          <div className="setup-num">1</div>
+          <div className="setup-step-text">Find this block near the top of the file:<br/><code>const SUPABASE_URL = 'YOUR_SUPABASE_URL';</code></div>
+        </div>
+        <div className="setup-step">
+          <div className="setup-num">2</div>
+          <div className="setup-step-text">Replace <code>YOUR_SUPABASE_URL</code> with your project URL (e.g. <code>https://abc.supabase.co</code>)</div>
+        </div>
+        <div className="setup-step">
+          <div className="setup-num">3</div>
+          <div className="setup-step-text">Replace <code>YOUR_SUPABASE_ANON_KEY</code> with your project's <strong>anon/public</strong> key</div>
+        </div>
+        <p style={{marginBottom:0}}>Both values are in your Supabase dashboard under <strong>Project Settings → API</strong>. Follow the <a className="setup-link" href="sd-pulse-setup-guide.html" target="_blank">setup guide</a> for the full walkthrough.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── LOADING SCREEN ──────────────────────────────────────────────────────── */
+function Loading({ text='Loading…' }) {
+  return (
+    <div className="loading-screen">
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+        <div className="logo-icon" style={{width:32,height:32,fontSize:13,borderRadius:8}}>SD</div>
+        <span className="logo-text" style={{fontSize:18}}>SD Pulse</span>
+      </div>
+      <div className="spinner"/>
+      <div className="loading-text">{text}</div>
+    </div>
+  );
+}
+
+/* ── LOGIN ───────────────────────────────────────────────────────────────── */
+function Login({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [pass,  setPass]  = useState('');
+  const [err,   setErr]   = useState('');
+  const [busy,  setBusy]  = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true); setErr('');
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { setErr(error.message); setBusy(false); }
+    // on success, onAuthStateChange fires → App handles the rest
+  }
+
+  return (
+    <div className="login-screen">
+      <div className="login-card">
+        <div className="login-logo">
+          <div className="login-logo-mark">
+            <div className="logo-icon">SD</div>
+            <span className="logo-text">SD Pulse</span>
+          </div>
+          <div className="login-tagline">Internal communications platform</div>
+        </div>
+        <h2 className="login-title">Welcome back</h2>
+        <p className="login-subtitle">Sign in to read the latest updates from your team.</p>
+        <form onSubmit={submit}>
+          <div className="form-group">
+            <label className="form-label">Email address</label>
+            <input className="form-input" type="email" placeholder="you@company.com" value={email} onChange={e=>setEmail(e.target.value)} required autoFocus/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input className="form-input" type="password" placeholder="••••••••" value={pass} onChange={e=>setPass(e.target.value)} required/>
+          </div>
+          {err && <div className="form-error">{err}</div>}
+          <button className="btn btn-primary" type="submit" disabled={busy} style={{width:'100%',justifyContent:'center',padding:'12px 0',fontSize:15}}>
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+        <p style={{fontSize:12,color:'var(--muted)',marginTop:20,textAlign:'center'}}>
+          First time? Your account was created by your administrator.<br/>Check your email for your credentials.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── PROFILE SETUP (first login) ─────────────────────────────────────────── */
+function ProfileSetup({ userId, onComplete }) {
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err,  setErr]  = useState('');
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setBusy(true);
+    const initials = makeInitials(name).toUpperCase() || '??';
+    const { data, error } = await sb.from('profiles')
+      .insert({ id: userId, name: name.trim(), initials, role: 'reader' })
+      .select().single();
+    if (error) { setErr(error.message); setBusy(false); return; }
+    onComplete(data);
+  }
+
+  return (
+    <div className="profile-setup-screen">
+      <div className="login-card">
+        <div className="login-logo">
+          <div className="login-logo-mark">
+            <div className="logo-icon">SD</div>
+            <span className="logo-text">SD Pulse</span>
+          </div>
+        </div>
+        <h2 className="login-title">Welcome to SD Pulse</h2>
+        <p className="login-subtitle">Just tell us your name to get started.</p>
+        <form onSubmit={submit}>
+          <div className="form-group">
+            <label className="form-label">Your full name</label>
+            <input className="form-input" type="text" placeholder="e.g. Sophie Vandenberghe" value={name} onChange={e=>setName(e.target.value)} required autoFocus/>
+          </div>
+          {err && <div className="form-error">{err}</div>}
+          <button className="btn btn-primary" type="submit" disabled={busy||!name.trim()} style={{width:'100%',justifyContent:'center',padding:'12px 0',fontSize:15}}>
+            {busy ? 'Setting up…' : 'Get started →'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ── NOTIFICATION PANEL ──────────────────────────────────────────────────── */
+function NotifPanel({ notifs, onClose, onMarkAll, onOpen }) {
+  const unread = notifs.filter(n=>!n.read).length;
+  return (
+    <div className="notif-panel">
+      <div className="notif-header">
+        <span className="notif-header-title">Notifications {unread>0&&`(${unread})`}</span>
+        {unread>0 && <span className="notif-mark-read" onClick={onMarkAll}>Mark all read</span>}
+      </div>
+      <div className="notif-list">
+        {notifs.length===0
+          ? <div className="notif-empty">You're all caught up.</div>
+          : notifs.map(n=>(
+              <div key={n.id} className={`notif-item ${n.read?'':'unread'}`} onClick={()=>{onOpen(n.post_id);onClose();}}>
+                {n.read?<div className="notif-dot-empty"/>:<div className="notif-dot"/>}
+                <div>
+                  <div className="notif-text">{n.text}</div>
+                  <div className="notif-time">{fmtTime(n.created_at)}</div>
+                </div>
+              </div>
+            ))
+        }
+      </div>
+    </div>
+  );
+}
+
+/* ── POLL PREVIEW ────────────────────────────────────────────────────────── */
+function PollPreview({ poll }) {
+  if (!poll) return null;
+  const tot = totalVotes(poll);
+  const max = Math.max(...poll.options.map(o=>o.votes), 1);
+  return (
+    <div className="poll-preview">
+      <div className="poll-label">📊 Poll</div>
+      <div className="poll-question-text">{poll.question}</div>
+      {poll.options.map(o=>{
+        const pct = tot>0 ? Math.round(o.votes/tot*100) : 0;
+        return (
+          <div key={o.id} className="poll-bar-row">
+            <div className="poll-bar-label-row">
+              <span className="poll-bar-option">{o.text}</span>
+              <span className="poll-bar-pct">{pct}%</span>
+            </div>
+            <div className="poll-bar-track">
+              <div className={`poll-bar-fill ${o.votes===max&&o.votes>0?'top':''}`} style={{width:`${pct}%`}}/>
+            </div>
+          </div>
+        );
+      })}
+      <div className="poll-total">{tot} votes</div>
+    </div>
+  );
+}
+
+/* ── INTERACTIVE POLL ────────────────────────────────────────────────────── */
+function PollInteractive({ poll, onVote, voting }) {
+  if (!poll) return null;
+  const voted = !!poll.userVote;
+  const tot = totalVotes(poll);
+  const max = Math.max(...poll.options.map(o=>o.votes), 1);
+  return (
+    <div className="poll-interactive">
+      <div className="poll-int-header">
+        <Icon name="poll" size={15} style={{color:'var(--green)'}}/>
+        <span className="poll-int-label">Poll</span>
+      </div>
+      <div className="poll-int-question">{poll.question}</div>
+      {!voted
+        ? poll.options.map(o=>(
+            <button key={o.id} className="poll-vote-btn" onClick={()=>onVote(o.id)} disabled={voting}>
+              <span className="poll-radio"/>
+              {o.text}
+            </button>
+          ))
+        : <>
+            {poll.options.map(o=>{
+              const pct = tot>0 ? Math.round(o.votes/tot*100) : 0;
+              const isTop = o.votes===max&&o.votes>0;
+              const mine = poll.userVote===o.id;
+              return (
+                <div key={o.id} className="poll-result-row">
+                  <div className="poll-result-labels">
+                    <span className={`poll-result-label ${isTop?'winner':''} ${mine?'myvote':''}`}>
+                      {mine&&<Icon name="check" size={13} style={{color:'var(--green)'}}/>}
+                      {o.text}
+                    </span>
+                    <span className="poll-result-pct">{pct}%</span>
+                  </div>
+                  <div className="poll-result-track">
+                    <div className={`poll-result-fill ${isTop?'top':''}`} style={{width:`${pct}%`}}/>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="poll-footer">
+              <Icon name="check" size={13} style={{color:'var(--green)'}}/>
+              Your vote is recorded · {tot} total votes
+            </div>
+          </>
+      }
+    </div>
+  );
+}
+
+/* ── FEED ────────────────────────────────────────────────────────────────── */
+function Feed({ posts, onOpen }) {
+  return (
+    <div className="feed">
+      <div className="page-accent"/>
+      <h1 className="page-title">Latest updates</h1>
+      <p className="page-subtitle">Stay in the loop with what's happening at Schelstraete Delacourt</p>
+      {posts.length===0
+        ? <div className="empty-state">
+            <div className="empty-icon">📬</div>
+            <div className="empty-title">Nothing published yet</div>
+            <div className="empty-body">Check back soon — your editors are working on it.</div>
+          </div>
+        : posts.map(post=>(
+            <div key={post.id} className="post-card" onClick={()=>onOpen(post.id)}>
+              <div className="post-meta">
+                <div className="avatar avatar-sm">{post.author_initials}</div>
+                <span className="post-author">{post.author_name}</span>
+                <span className="post-sep"/>
+                <span className="post-date">{fmtDate(post.created_at)}</span>
+                {post.category&&<span className="post-category">{post.category}</span>}
+              </div>
+              <h2 className="post-title">{post.title}</h2>
+              <p className="post-excerpt">{post.excerpt}</p>
+              {post.poll&&<PollPreview poll={post.poll}/>}
+              <div className="post-footer">
+                <span className="post-stat"><Icon name="eye" size={13}/>{post.views||0}</span>
+                <span className="post-stat"><Icon name="book" size={13}/>{post.read_time} min</span>
+                {post.poll&&<span className="post-stat"><Icon name="poll" size={13}/>{totalVotes(post.poll)} votes</span>}
+                <span className="read-more">Read more →</span>
+              </div>
+            </div>
+          ))
+      }
+    </div>
+  );
+}
+
+/* ── POST DETAIL ─────────────────────────────────────────────────────────── */
+function PostDetail({ post, onBack, onVote, voting }) {
+  return (
+    <div className="post-detail">
+      <div className="back-btn" onClick={onBack}>
+        <Icon name="back" size={15}/> Back to feed
+      </div>
+      {post.category&&<span className="detail-category">{post.category}</span>}
+      <h1 className="detail-title">{post.title}</h1>
+      <div className="detail-meta">
+        <div className="avatar avatar-sm">{post.author_initials}</div>
+        <div>
+          <div className="detail-author-name">{post.author_name}</div>
+          <div className="detail-author-info">{fmtDate(post.created_at)} · {post.read_time} min read</div>
+        </div>
+      </div>
+      <div className="post-body" dangerouslySetInnerHTML={{__html:post.body}}/>
+      {post.poll&&<PollInteractive poll={post.poll} onVote={optId=>onVote(post.id,optId)} voting={voting}/>}
+    </div>
+  );
+}
+
+/* ── COMPOSE ─────────────────────────────────────────────────────────────── */
+function Compose({ profile, onPublish, onCancel, publishing }) {
+  const [title,    setTitle]    = useState('');
+  const [category, setCategory] = useState('Company News');
+  const [showPoll, setShowPoll] = useState(false);
+  const [pollQ,    setPollQ]    = useState('');
+  const [pollOpts, setPollOpts] = useState(['','']);
+  const bodyRef = useRef(null);
+  const CATS = ['Company News','Announcements','Events','People','Strategy'];
+  const exec = (cmd,val=null) => { document.execCommand(cmd,false,val); bodyRef.current?.focus(); };
+
+  function doPublish() {
+    if (!title.trim()) { alert('Please add a title.'); return; }
+    const html = bodyRef.current?.innerHTML||'';
+    if (!html.replace(/<br\s*\/?>/gi,'').trim()) { alert('Please add some content.'); return; }
+    const valid = pollOpts.filter(o=>o.trim());
+    const poll = showPoll&&pollQ.trim()&&valid.length>=2
+      ? { question:pollQ, userVote:null, options:valid.map((t,i)=>({id:String.fromCharCode(97+i),text:t,votes:0})) }
+      : null;
+    const words = (bodyRef.current?.innerText||'').split(/\s+/).length;
+    onPublish({ title:title.trim(), category, body:html, poll,
+      excerpt:(bodyRef.current?.innerText||'').slice(0,150).replace(/\n/g,' ').trim()+'…',
+      read_time:Math.max(1,Math.ceil(words/200)) });
+  }
+
+  return (
+    <div className="compose-view">
+      <div className="page-accent"/>
+      <h1 className="page-title" style={{marginBottom:4}}>New post</h1>
+      <p className="page-subtitle">Write and publish an update for your colleagues.</p>
+      <div className="compose-card">
+        <input className="compose-title-input" placeholder="Post title…" value={title} onChange={e=>setTitle(e.target.value)}/>
+        <div className="section-label">Category</div>
+        <div className="cat-chips">
+          {CATS.map(c=><div key={c} className={`cat-chip ${category===c?'active':''}`} onClick={()=>setCategory(c)}>{c}</div>)}
+        </div>
+        <div className="section-label">Content</div>
+        <div className="toolbar">
+          <span className="tb-hint">Format:</span>
+          <button className="tb-btn" onMouseDown={e=>{e.preventDefault();exec('bold')}}><strong>B</strong></button>
+          <button className="tb-btn" onMouseDown={e=>{e.preventDefault();exec('italic')}}><em>I</em></button>
+          <button className="tb-btn" onMouseDown={e=>{e.preventDefault();exec('underline')}}><u>U</u></button>
+          <div className="tb-sep"/>
+          <button className="tb-btn" style={{fontSize:11,minWidth:34}} onMouseDown={e=>{e.preventDefault();exec('formatBlock','<h2>')}}>H2</button>
+          <button className="tb-btn" style={{fontSize:11,minWidth:34}} onMouseDown={e=>{e.preventDefault();exec('formatBlock','<p>')}}>¶</button>
+          <div className="tb-sep"/>
+          <button className="tb-btn" onMouseDown={e=>{e.preventDefault();const u=prompt('URL:');if(u)exec('createLink',u);}}>🔗</button>
+        </div>
+        <div ref={bodyRef} className="compose-body" contentEditable data-placeholder="Write your update here…" suppressContentEditableWarning/>
+        <hr className="compose-divider"/>
+        <div className="poll-toggle" onClick={()=>setShowPoll(!showPoll)}>
+          <span className="poll-toggle-icon">{showPoll?'−':'+'}</span>
+          {showPoll?'Remove poll':'Attach a poll'}
+        </div>
+        {showPoll&&(
+          <div className="poll-builder">
+            <div className="poll-builder-label">📊 Poll</div>
+            <input className="poll-q-input" placeholder="What would you like to ask?" value={pollQ} onChange={e=>setPollQ(e.target.value)}/>
+            {pollOpts.map((opt,i)=>(
+              <div key={i} className="poll-opt-row">
+                <input className="poll-opt-input" placeholder={`Option ${i+1}`} value={opt} onChange={e=>{const a=[...pollOpts];a[i]=e.target.value;setPollOpts(a);}}/>
+                {pollOpts.length>2&&<button className="btn-icon" style={{color:'var(--muted)'}} onClick={()=>setPollOpts(pollOpts.filter((_,j)=>j!==i))}><Icon name="x" size={14}/></button>}
+              </div>
+            ))}
+            {pollOpts.length<4&&<button className="poll-add-btn" onClick={()=>setPollOpts([...pollOpts,''])}><Icon name="plus" size={13}/> Add option</button>}
+          </div>
+        )}
+        <div className="compose-actions">
+          <button className="btn btn-ghost" onClick={onCancel} disabled={publishing}>Cancel</button>
+          <button className="btn btn-primary" onClick={doPublish} disabled={publishing}>
+            <Icon name="send" size={14}/> {publishing?'Publishing…':'Publish'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── ROOT APP ────────────────────────────────────────────────────────────── */
+function App() {
+  const [session,     setSession]     = useState(undefined); // undefined = loading
+  const [profile,     setProfile]     = useState(null);
+  const [needProfile, setNeedProfile] = useState(false);
+  const [posts,       setPosts]       = useState([]);
+  const [notifs,      setNotifs]      = useState([]);
+  const [view,        setView]        = useState('feed');
+  const [activeId,    setActiveId]    = useState(null);
+  const [showNotif,   setShowNotif]   = useState(false);
+  const [voting,      setVoting]      = useState(false);
+  const [publishing,  setPublishing]  = useState(false);
+  const [toasts,      setToasts]      = useState([]);
+  const notifRef = useRef(null);
+
+  const unread = notifs.filter(n=>!n.read).length;
+
+  // ── auth listener
+  useEffect(()=>{
+    sb.auth.getSession().then(({data:{session}})=>setSession(session));
+    const {data:{subscription}} = sb.auth.onAuthStateChange((_,s)=>setSession(s));
+    return ()=>subscription.unsubscribe();
+  },[]);
+
+  // ── load profile when session changes
+  useEffect(()=>{
+    if (session===undefined) return;
+    if (!session) { setProfile(null); setNeedProfile(false); return; }
+    loadProfile(session.user.id);
+  },[session]);
+
+  // ── close notif panel on outside click
+  useEffect(()=>{
+    const h = e => { if(notifRef.current&&!notifRef.current.contains(e.target)) setShowNotif(false); };
+    document.addEventListener('mousedown',h);
+    return ()=>document.removeEventListener('mousedown',h);
+  },[]);
+
+  function toast(msg, err=false) {
+    const id = Date.now();
+    setToasts(t=>[...t,{id,msg,err}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3500);
+  }
+
+  async function loadProfile(uid) {
+    const {data,error} = await sb.from('profiles').select('*').eq('id',uid).maybeSingle();
+    if (!data) { setNeedProfile(true); return; }
+    setProfile(data);
+    setNeedProfile(false);
+    await refreshData(uid);
+  }
+
+  async function refreshData(uid) {
+    const userId = uid || profile?.id;
+    if (!userId) return;
+    const [{data:dbPosts},{data:votes},{data:dbNotifs}] = await Promise.all([
+      sb.from('posts').select('*').order('created_at',{ascending:false}),
+      sb.from('poll_votes').select('post_id,option_id').eq('user_id',userId),
+      sb.from('notifications').select('*').eq('user_id',userId).order('created_at',{ascending:false}).limit(30),
+    ]);
+    const voteMap = {};
+    (votes||[]).forEach(v=>{ voteMap[v.post_id]=v.option_id; });
+    setPosts((dbPosts||[]).map(p=>({
+      ...p, poll: p.poll ? {...p.poll, userVote: voteMap[p.id]||null} : null
+    })));
+    setNotifs(dbNotifs||[]);
+  }
+
+  async function openPost(id) {
+    setActiveId(id);
+    setView('post');
+    // increment view count
+    sb.from('posts').update({views:(posts.find(p=>p.id===id)?.views||0)+1}).eq('id',id);
+    setPosts(ps=>ps.map(p=>p.id===id?{...p,views:(p.views||0)+1}:p));
+  }
+
+  async function vote(postId, optId) {
+    if (voting) return;
+    setVoting(true);
+    const {error} = await sb.from('poll_votes').insert({post_id:postId,option_id:optId,user_id:profile.id});
+    if (error) { toast('Could not record vote — you may have already voted.',true); setVoting(false); return; }
+    // update poll JSONB in DB
+    const post = posts.find(p=>p.id===postId);
+    const updatedPoll = {
+      ...post.poll, userVote: optId,
+      options: post.poll.options.map(o=>o.id===optId?{...o,votes:o.votes+1}:o),
+    };
+    await sb.from('posts').update({poll:updatedPoll}).eq('id',postId);
+    setPosts(ps=>ps.map(p=>p.id===postId?{...p,poll:updatedPoll}:p));
+    toast('Your vote has been recorded!');
+    setVoting(false);
+  }
+
+  async function publish(data) {
+    setPublishing(true);
+    const {data:post,error} = await sb.from('posts').insert({
+      title:data.title, category:data.category, body:data.body, excerpt:data.excerpt,
+      author_id:profile.id, author_name:profile.name, author_initials:profile.initials,
+      read_time:data.read_time, poll:data.poll, views:0,
+    }).select().single();
+    if (error) { toast('Publish failed: '+error.message,true); setPublishing(false); return; }
+    // notify all other users
+    const {data:others} = await sb.from('profiles').select('id').neq('id',profile.id);
+    if (others?.length>0) {
+      await sb.from('notifications').insert(
+        others.map(u=>({ user_id:u.id, text:`${profile.name} published "${data.title}"`, post_id:post.id }))
+      );
+    }
+    await refreshData();
+    toast('Published — your colleagues have been notified!');
+    setView('feed');
+    setPublishing(false);
+  }
+
+  async function markAllRead() {
+    const ids = notifs.filter(n=>!n.read).map(n=>n.id);
+    if (ids.length===0) return;
+    await sb.from('notifications').update({read:true}).in('id',ids);
+    setNotifs(n=>n.map(x=>({...x,read:true})));
+  }
+
+  async function signOut() {
+    await sb.auth.signOut();
+    setProfile(null); setView('feed'); setPosts([]); setNotifs([]);
+  }
+
+  const activePost = posts.find(p=>p.id===activeId);
+  const topTitle = view==='feed' ? 'SD Pulse' : view==='compose' ? 'New post'
+    : activePost ? (activePost.title.length>42?activePost.title.slice(0,42)+'…':activePost.title) : 'Post';
+
+  // ── render
+  if (session===undefined) return <Loading text="Connecting…"/>;
+  if (!session) return <Login onLogin={()=>{}}/>;
+  if (needProfile) return <ProfileSetup userId={session.user.id} onComplete={p=>{setProfile(p);setNeedProfile(false);refreshData(p.id);}}/>;
+  if (!profile) return <Loading text="Loading your profile…"/>;
+
+  return (
+    <div className="app">
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <div className="logo-icon">SD</div>
+          <span className="logo-text">SD Pulse</span>
+        </div>
+        <nav>
+          <div className="nav-section">Menu</div>
+          <div className={`nav-item ${view==='feed'?'active':''}`} onClick={()=>setView('feed')}>
+            <Icon name="home" size={16}/> Feed
+          </div>
+          {profile.role==='editor'&&(
+            <div className={`nav-item ${view==='compose'?'active':''}`} onClick={()=>setView('compose')}>
+              <Icon name="edit" size={16}/> New post
+            </div>
+          )}
+          <div className="nav-section">Account</div>
+          <div className="nav-item" onClick={signOut}>
+            <Icon name="logout" size={16}/> Sign out
+          </div>
+        </nav>
+        <div className="sidebar-footer">
+          <div className="user-card">
+            <div className="avatar">{profile.initials}</div>
+            <div>
+              <div className="user-name">{profile.name}</div>
+              <div className="user-role">{profile.role}</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <div className="main">
+        <header className="topbar">
+          <span className="topbar-title">{topTitle}</span>
+          <div className="topbar-actions">
+            {profile.role==='editor'&&view!=='compose'&&(
+              <button className="btn btn-primary" style={{fontSize:13,padding:'7px 14px'}} onClick={()=>setView('compose')}>
+                <Icon name="plus" size={14}/> Write
+              </button>
+            )}
+            <div className="notif-wrapper" ref={notifRef}>
+              <button className="btn-icon" onClick={()=>setShowNotif(!showNotif)}>
+                <Icon name="bell" size={18}/>
+              </button>
+              {unread>0&&<div className="notif-badge-dot">{unread}</div>}
+              {showNotif&&(
+                <NotifPanel notifs={notifs} onClose={()=>setShowNotif(false)}
+                  onMarkAll={markAllRead} onOpen={openPost}/>
+              )}
+            </div>
+            <div className="avatar" style={{cursor:'default'}}>{profile.initials}</div>
+          </div>
+        </header>
+        <main className="content">
+          {view==='feed'&&<Feed posts={posts} onOpen={openPost}/>}
+          {view==='post'&&activePost&&<PostDetail post={activePost} onBack={()=>setView('feed')} onVote={vote} voting={voting}/>}
+          {view==='compose'&&profile.role==='editor'&&<Compose profile={profile} onPublish={publish} onCancel={()=>setView('feed')} publishing={publishing}/>}
+        </main>
+      </div>
+
+      {/* BOTTOM NAV */}
+      <nav className="bottom-nav">
+        <div className={`bn-item ${view==='feed'?'active':''}`} onClick={()=>setView('feed')}>
+          <Icon name="home" size={22}/> Feed
+        </div>
+        {profile.role==='editor'&&(
+          <div className={`bn-item ${view==='compose'?'active':''}`} onClick={()=>setView('compose')}>
+            <Icon name="edit" size={22}/> Write
+          </div>
+        )}
+        <div className="bn-item" style={{position:'relative'}} onClick={()=>setShowNotif(!showNotif)}>
+          <Icon name="bell" size={22}/>
+          {unread>0&&<div className="bn-badge">{unread}</div>}
+          Alerts
+        </div>
+        <div className="bn-item" onClick={signOut}>
+          <Icon name="logout" size={22}/> Sign out
+        </div>
+      </nav>
+
+      <Toasts toasts={toasts}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  isConfigured ? <App/> : <NotConfigured/>
+);
+</script>
+</body>
+</html>
